@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoEcho - 你的游戏世界</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- 音频元素 -->
+    <audio id="bgMusic" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="clickSound">
+        <source src="https://www.soundjay.com/button/sounds/button-09.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="hoverSound">
+        <source src="https://www.soundjay.com/button/sounds/button-10.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 音乐控制按钮 -->
+    <button id="musicToggle" class="music-toggle">
+        <i class="fas fa-music"></i>
+    </button>
+
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <span class="logo-text">ECHOECHO</span>
+                </a>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" placeholder="搜索游戏..." class="search-input">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <div class="nav-links">
+                <a href="/games" class="nav-link">游戏</a>
+                <a href="/tools" class="nav-link">工具</a>
+                <a href="/about" class="nav-link">关于</a>
+            </div>
+
+            <div class="user-menu">
+                <button class="user-btn">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="/profile">个人中心</a>
+                    <a href="/favorites">我的收藏</a>
+                    <a href="/settings">设置</a>
+                    <a href="/login">登录/注册</a>
+                </div>
+            </div>
+
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <!-- 轮播推荐区 -->
+            <section class="featured-games">
+                <div class="carousel">
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <div class="game-preview">
+                                <div class="game-background" style="background: linear-gradient(45deg, #ff6b6b, #ff8e8e)">
+                                    <div class="game-content">
+                                        <div class="game-tag">热门推荐</div>
+                                        <h2>樱花动画</h2>
+                                        <p class="game-description">一个美丽的樱花动画效果，让您感受春天的气息。花瓣随风飘落，营造出浪漫的氛围。</p>
+                                        <div class="game-features">
+                                            <span><i class="fas fa-paint-brush"></i> 精美动画</span>
+                                            <span><i class="fas fa-mobile-alt"></i> 响应式设计</span>
+                                            <span><i class="fas fa-music"></i> 背景音乐</span>
+                                        </div>
+                                        <button class="play-btn">
+                                            <i class="fas fa-play"></i> 立即体验
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="game-preview">
+                                <div class="game-background" style="background: linear-gradient(45deg, #4facfe, #00f2fe)">
+                                    <div class="game-content">
+                                        <div class="game-tag">最新上线</div>
+                                        <h2>下雪动画</h2>
+                                        <p class="game-description">浪漫的下雪动画效果，让您感受冬日的温暖。雪花飘落，营造出梦幻的氛围。</p>
+                                        <div class="game-features">
+                                            <span><i class="fas fa-snowflake"></i> 雪花特效</span>
+                                            <span><i class="fas fa-mobile-alt"></i> 响应式设计</span>
+                                            <span><i class="fas fa-volume-up"></i> 音效</span>
+                                        </div>
+                                        <button class="play-btn">
+                                            <i class="fas fa-play"></i> 立即体验
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="carousel-item">
+                            <div class="game-preview">
+                                <div class="game-background" style="background: linear-gradient(45deg, #667eea, #764ba2)">
+                                    <div class="game-content">
+                                        <div class="game-tag">创意设计</div>
+                                        <h2>七彩雨</h2>
+                                        <p class="game-description">绚丽的七彩雨动画效果，让您感受色彩的魔力。雨滴落下，形成美丽的彩虹。</p>
+                                        <div class="game-features">
+                                            <span><i class="fas fa-palette"></i> 多彩效果</span>
+                                            <span><i class="fas fa-mobile-alt"></i> 响应式设计</span>
+                                            <span><i class="fas fa-magic"></i> 互动效果</span>
+                                        </div>
+                                        <button class="play-btn">
+                                            <i class="fas fa-play"></i> 立即体验
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="carousel-control prev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-control next">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div class="carousel-indicators">
+                        <span class="indicator active"></span>
+                        <span class="indicator"></span>
+                        <span class="indicator"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 经典游戏区 -->
+            <section class="classic-games">
+                <h2 class="section-title">经典游戏</h2>
+                <div class="game-grid">
+                    <div class="game-card" data-game="pacman">
+                        <div class="game-thumbnail">
+                            <img src="https://passer-by.com/pacman/assets/images/logo.png" alt="吃豆人">
+                        </div>
+                        <div class="game-details">
+                            <h3>吃豆人</h3>
+                            <p>经典的街机游戏，躲避幽灵并吃掉所有豆子</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 5.2k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.8k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="tetris">
+                        <div class="game-thumbnail">
+                            <img src="https://chvin.github.io/react-tetris/static/media/tetris-logo.6b5e6b2e.png" alt="俄罗斯方块">
+                        </div>
+                        <div class="game-details">
+                            <h3>俄罗斯方块</h3>
+                            <p>经典的益智游戏，旋转和移动方块来消除行</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 4.8k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 2.1k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="tank">
+                        <div class="game-thumbnail">
+                            <img src="https://battle-city.js.org/assets/images/logo.png" alt="坦克大战">
+                        </div>
+                        <div class="game-details">
+                            <h3>坦克大战</h3>
+                            <p>经典的策略游戏，控制坦克保护基地</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 3.9k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.5k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="chess">
+                        <div class="game-thumbnail">
+                            <img src="https://lichess.org/assets/images/logo.png" alt="国际象棋">
+                        </div>
+                        <div class="game-details">
+                            <h3>国际象棋</h3>
+                            <p>经典的策略棋类游戏，考验智力和策略</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 3.2k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.2k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="star-battle">
+                        <div class="game-thumbnail">
+                            <img src="https://4ark.me/star-battle/assets/images/logo.png" alt="星战">
+                        </div>
+                        <div class="game-details">
+                            <h3>星战</h3>
+                            <p>刺激的太空射击游戏，消灭敌人保护地球</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 2.8k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.1k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="alien-invasion">
+                        <div class="game-thumbnail">
+                            <img src="https://cykod.github.io/AlienInvasion/assets/images/logo.png" alt="太空侵略者">
+                        </div>
+                        <div class="game-details">
+                            <h3>太空侵略者</h3>
+                            <p>经典的街机射击游戏，击落外星飞船</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 2.5k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 980</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="snake">
+                        <div class="game-thumbnail">
+                            <img src="https://rabiroshan.github.io/snake_game/assets/images/logo.png" alt="贪吃蛇">
+                        </div>
+                        <div class="game-details">
+                            <h3>贪吃蛇</h3>
+                            <p>经典的休闲游戏，控制蛇吃到食物并不断成长</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 4.1k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.6k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="mario">
+                        <div class="game-thumbnail">
+                            <img src="https://martindrapeau.github.io/backbone-game-engine/super-mario-bros/assets/images/logo.png" alt="超级马里奥">
+                        </div>
+                        <div class="game-details">
+                            <h3>超级马里奥</h3>
+                            <p>经典的动作冒险游戏，帮助马里奥拯救公主</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 3.7k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.4k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="2048">
+                        <div class="game-thumbnail">
+                            <img src="https://play2048.co/assets/images/logo.png" alt="2048">
+                        </div>
+                        <div class="game-details">
+                            <h3>2048</h3>
+                            <p>益智数字游戏，合并相同数字达到2048</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 3.5k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 1.3k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-card" data-game="sliding-puzzle">
+                        <div class="game-thumbnail">
+                            <img src="https://www.sandeepnambiar.com/sliding_puzzle/assets/images/logo.png" alt="滑动拼图">
+                        </div>
+                        <div class="game-details">
+                            <h3>滑动拼图</h3>
+                            <p>经典的益智游戏，通过滑动方块完成拼图</p>
+                            <div class="game-meta">
+                                <span class="views"><i class="fas fa-eye"></i> 2.3k</span>
+                                <span class="likes"><i class="fas fa-heart"></i> 890</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="game-navigation">
+                <div class="game-section">
+                    <h3 class="section-title">全球热门游戏</h3>
+                    <ul class="game-links">
+                        <li><a href="https://www.heishenhua.com" target="_blank">Black Myth: Wukong - 3A动作RPG</a></li>
+                        <li><a href="https://www.leagueoflegends.com" target="_blank">League of Legends - MOBA游戏</a></li>
+                        <li><a href="https://worldofwarcraft.blizzard.com" target="_blank">World of Warcraft - MMORPG</a></li>
+                        <li><a href="https://cf.nefficient.co.kr" target="_blank">CrossFire - FPS游戏</a></li>
+                    </ul>
+                </div>
+
+                <div class="game-section">
+                    <h3 class="section-title">中国热门游戏</h3>
+                    <ul class="game-links">
+                        <li><a href="https://pvp.qq.com" target="_blank">王者荣耀 (Honor of Kings)</a></li>
+                        <li><a href="https://ys.mihoyo.com" target="_blank">原神 (Genshin Impact)</a></li>
+                        <li><a href="https://lol.qq.com" target="_blank">英雄联盟 (League of Legends 中国服)</a></li>
+                        <li><a href="https://dnf.qq.com" target="_blank">地下城与勇士 (Dungeon & Fighter)</a></li>
+                    </ul>
+                </div>
+
+                <div class="game-section">
+                    <h3 class="section-title">其他游戏平台</h3>
+                    <ul class="game-links">
+                        <li><a href="https://www.miniclip.com" target="_blank">Miniclip</a></li>
+                        <li><a href="https://www.kongregate.com" target="_blank">Kongregate</a></li>
+                        <li><a href="https://www.y8.com" target="_blank">Y8</a></li>
+                        <li><a href="http://www.4399.com" target="_blank">4399 小游戏</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2024 EchoEcho. 保留所有权利</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 
