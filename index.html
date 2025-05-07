@@ -41,6 +41,10 @@
             background-color: #fff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: relative;
+            transition: transform 0.2s;
+        }
+        .recipe-card:hover {
+            transform: translateY(-5px);
         }
         .recipe-title {
             color: #333;
@@ -63,6 +67,7 @@
             background-color: #f8f9fa;
             border-radius: 4px;
             display: inline-block;
+            transition: background-color 0.2s;
         }
         .history-item:hover {
             background-color: #e9ecef;
@@ -74,6 +79,7 @@
             cursor: pointer;
             font-size: 1.2em;
             color: #ffc107;
+            transition: color 0.2s;
         }
         .favorite-btn:hover {
             color: #ff9800;
@@ -98,6 +104,15 @@
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
         }
+        .debug-info {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -110,6 +125,7 @@
             </div>
             
             <div id="errorMessage" class="error-message"></div>
+            <div id="debugInfo" class="debug-info"></div>
             
             <!-- 搜索历史 -->
             <div class="history-section" id="historySection" style="display: none;">
@@ -138,16 +154,26 @@
     <script>
         const API_BASE_URL = 'https://cookbook-search.vercel.app';
         const MAX_HISTORY_ITEMS = 10;
+        const DEBUG_MODE = true;
 
         // 从localStorage加载数据
         let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
         let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+        // 显示调试信息
+        function showDebugInfo(message) {
+            if (!DEBUG_MODE) return;
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML += `<div>${new Date().toISOString()}: ${message}</div>`;
+        }
 
         // 显示错误信息
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+            showDebugInfo(`错误: ${message}`);
             setTimeout(() => {
                 errorDiv.style.display = 'none';
             }, 3000);
@@ -206,6 +232,7 @@
             searchHistory = searchHistory.filter(item => item !== term);
             localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
             displaySearchHistory();
+            showDebugInfo(`删除历史记录: ${term}`);
         }
 
         // 切换收藏状态
@@ -213,8 +240,10 @@
             const index = favorites.findIndex(f => f.url === recipe.url);
             if (index === -1) {
                 favorites.push(recipe);
+                showDebugInfo(`添加收藏: ${recipe.title}`);
             } else {
                 favorites.splice(index, 1);
+                showDebugInfo(`取消收藏: ${recipe.title}`);
             }
             localStorage.setItem('favorites', JSON.stringify(favorites));
             displayFavorites();
@@ -228,9 +257,12 @@
         // 检查API健康状态
         async function checkApiHealth() {
             try {
+                showDebugInfo('检查API健康状态...');
                 const response = await fetch(`${API_BASE_URL}/api/health`);
                 const data = await response.json();
-                if (data.status !== 'ok') {
+                if (data.status === 'ok') {
+                    showDebugInfo('API服务正常');
+                } else {
                     showError('API服务异常');
                 }
             } catch (error) {
@@ -246,6 +278,8 @@
                 return;
             }
 
+            showDebugInfo(`开始搜索: ${searchTerm}`);
+
             // 添加到搜索历史
             if (!searchHistory.includes(searchTerm)) {
                 searchHistory.unshift(searchTerm);
@@ -254,6 +288,7 @@
                 }
                 localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
                 displaySearchHistory();
+                showDebugInfo(`添加到搜索历史: ${searchTerm}`);
             }
 
             // 显示加载动画
@@ -261,9 +296,8 @@
             document.getElementById('searchResults').innerHTML = '';
 
             try {
-                console.log('开始搜索:', searchTerm);
                 const url = `${API_BASE_URL}/api/search?query=${encodeURIComponent(searchTerm)}`;
-                console.log('请求URL:', url);
+                showDebugInfo(`请求URL: ${url}`);
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -273,14 +307,14 @@
                     }
                 });
                 
-                console.log('响应状态:', response.status);
+                showDebugInfo(`响应状态: ${response.status}`);
                 
                 if (!response.ok) {
                     throw new Error(`搜索请求失败: ${response.status} ${response.statusText}`);
                 }
                 
                 const results = await response.json();
-                console.log('搜索结果:', results);
+                showDebugInfo(`搜索结果数量: ${results.length}`);
                 
                 if (!Array.isArray(results)) {
                     throw new Error('返回数据格式错误');
@@ -299,6 +333,7 @@
             const resultsContainer = document.getElementById('searchResults');
             if (!results || results.length === 0) {
                 resultsContainer.innerHTML = '<div class="alert alert-info">未找到相关菜谱</div>';
+                showDebugInfo('未找到搜索结果');
                 return;
             }
 
@@ -316,6 +351,7 @@
             `).join('');
 
             resultsContainer.innerHTML = html;
+            showDebugInfo(`显示 ${results.length} 个搜索结果`);
         }
 
         // 初始化显示
