@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Culinary Assistant - What Would You Like to Eat?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals & Sage -->
+    <!-- Application Structure Plan: The application is designed with a simple, linear three-stage user flow: 1) Input Stage, 2) Loading Stage, and 3) Results Stage. This structure directly mirrors the user's task of entering ingredients, waiting for a recipe, and then viewing it. This task-oriented design minimizes cognitive load and makes the application highly intuitive and easy to use. Navigation is handled by dynamically showing and hiding these three stage containers using JavaScript. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: User Ingredients & Preferences -> Goal: Collect user input -> Method: Interactive tag-based input field. Justification: More user-friendly and clear than a simple textarea. 
+        - Report Info: Recipe Generation -> Goal: Provide feedback during processing -> Method: CSS loading spinner and text. Justification: Manages user expectations during the simulated API call. 
+        - Report Info: Generated Recipe (name, description, ingredients, instructions) -> Goal: Clearly display the recipe -> Method: A structured card layout using Tailwind CSS. 
+        - Report Info: `ingredients_breakdown` with `available` and `missing` status -> Goal: Highlight the key value proposition -> Method: A list where each item is styled with different colors and icons (green check for available, orange warning for missing). This immediately draws the user's attention to what they have and what they need.
+        - Library/Method: Vanilla JavaScript for all logic. No external JS libraries for logic are needed.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        
+        .chat-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            word-wrap: break-word;
+        }
+        
+        .user-bubble {
+            background-color: #3B82F6;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 6px;
+        }
+        
+        .ai-bubble {
+            background-color: #F3F4F6;
+            color: #374151;
+            margin-right: auto;
+            border-bottom-left-radius: 6px;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 16px;
+            background-color: #F3F4F6;
+            border-radius: 18px;
+            margin-right: auto;
+            max-width: 80px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #9CA3AF;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        .example-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            background-color: #E5E7EB;
+            color: #6B7280;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .example-tag:hover {
+            background-color: #3B82F6;
+            color: white;
+        }
+        
+        .recipe-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 16px 0;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+        
+                <!-- ===== 主标题 ===== -->
+            <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">🍽️ AI Culinary Assistant</h1>
+            <p class="mt-4 text-lg text-gray-600">Tell me what you're craving, and AI will recommend the perfect recipe for you!</p>
+            </header>
+
+        <!-- ===== 搜索输入区域 ===== -->
+        <div id="searchSection" class="mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="foodSearchInput" 
+                        placeholder="What would you like to eat? e.g., Spicy food, Quick meals, Vegetarian..."
+                        class="w-full p-4 pr-12 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                    >
+                    <button id="searchBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 text-xl">
+                        🔍
+                    </button>
+                </div>
+                
+                <!-- 示例提示 -->
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500 mb-2">💡 Try these:</p>
+                    <div class="flex flex-wrap">
+                        <span class="example-tag" onclick="quickSearch('Chinese cuisine')">Chinese</span>
+                        <span class="example-tag" onclick="quickSearch('Something spicy')">Spicy</span>
+                        <span class="example-tag" onclick="quickSearch('Quick and easy')">Quick & Easy</span>
+                        <span class="example-tag" onclick="quickSearch('Light and healthy')">Light & Healthy</span>
+                        <span class="example-tag" onclick="quickSearch('Vegetarian food')">Vegetarian</span>
+                        <span class="example-tag" onclick="quickSearch('Comfort food')">Comfort Food</span>
+                        <button class="example-tag bg-red-100 hover:bg-red-200" onclick="testAPIConnection()">🔧 Test API</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 对话区域 ===== -->
+        <div id="chatSection" class="mb-8">
+            <div id="chatContainer" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 min-h-[200px] max-h-[600px] overflow-y-auto">
+                <!-- 对话内容将在这里动态生成 -->
+                                <div id="chatWelcome" class="text-center text-gray-500 py-8">
+                    <div class="text-4xl mb-4">👨‍🍳</div>
+                    <p>Welcome! Tell me what you're craving, and I'll recommend delicious recipes for you</p>
+        </div>
+            </div>
+            
+            <!-- 追问输入框 -->
+            <div id="followUpSection" class="hidden mt-4">
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="followUpInput" 
+                        placeholder="Ask follow-up questions... e.g., Is there an easier way to make this?"
+                        class="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:outline-none"
+                    >
+                    <button id="followUpBtn" class="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors">
+                        Ask
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 菜谱详情展示区域 ===== -->
+        <div id="recipeDetailSection" class="hidden">
+            <div class="recipe-card fade-in">
+                <div class="text-center mb-6">
+                    <h2 id="recipeName" class="text-3xl font-bold text-gray-800 mb-2"></h2>
+                    <p id="recipeDescription" class="text-gray-600"></p>
+                </div>
+                
+                <!-- 菜谱基本信息 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Cook Time</p>
+                        <p id="recipeTime" class="text-xl font-bold text-blue-600"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Difficulty</p>
+                        <p id="recipeDifficulty" class="text-xl font-bold text-blue-600"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Cuisine</p>
+                        <p id="recipeCuisine" class="text-xl font-bold text-blue-600"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <button id="favoriteBtn" class="w-full text-xl text-gray-400 hover:text-red-500 transition-colors">
+                            ❤️ Favorite
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 食材清单 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">🥘 Ingredients</h3>
+                    <ul id="ingredientsList" class="space-y-2">
+                        <!-- 动态生成 -->
+                    </ul>
+                </div>
+
+                <!-- 烹饪步骤 -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">👩‍🍳 Instructions</h3>
+                    <ol id="instructionsList" class="space-y-3">
+                        <!-- 动态生成 -->
+                    </ol>
+                </div>
+                
+                <!-- 小贴士 -->
+                <div id="tipsContainer" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <h4 class="font-bold text-yellow-800 mb-2">💡 Cooking Tips</h4>
+                    <p id="cookingTips" class="text-yellow-700"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 底部按钮 ===== -->
+        <div id="actionButtons" class="hidden text-center mt-8">
+            <button id="newSearchBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-xl mr-4 transition-colors">
+                New Search
+            </button>
+            <button id="anotherRecipeBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl transition-colors">
+                Try Another Recipe
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // API 配置 - 正确的OpenRouter配置
+            const API_CONFIG = {
+                apiKey: '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',
+                baseUrl: 'https://openrouter.ai/api/v1',
+                model: 'deepseek/deepseek-r1-0528-qwen3-8b:free'  // 正确的免费模型名称
+            };
+
+            // 添加API测试函数
+            async function testAPI() {
+                console.log('测试API连接...');
+                try {
+                    const response = await fetch(`${API_CONFIG.baseUrl}/chat/completions`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_CONFIG.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: API_CONFIG.model,
+                            messages: [{ role: 'user', content: '你好' }],
+                            max_tokens: 100
+                        })
+                    });
+                    
+                    console.log('API响应状态:', response.status);
+                    const data = await response.json();
+                    console.log('API响应数据:', data);
+                    
+                    if (!response.ok) {
+                        throw new Error(`API错误: ${response.status} - ${JSON.stringify(data)}`);
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('API测试失败:', error);
+                    throw error;
+                }
+            }
+
+            // 对话历史
+            let conversationHistory = [];
+            let currentContext = '';
+
+            // DOM 元素
+            const foodSearchInput = document.getElementById('foodSearchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const chatContainer = document.getElementById('chatContainer');
+            const chatWelcome = document.getElementById('chatWelcome');
+            const followUpSection = document.getElementById('followUpSection');
+            const followUpInput = document.getElementById('followUpInput');
+            const followUpBtn = document.getElementById('followUpBtn');
+            const recipeDetailSection = document.getElementById('recipeDetailSection');
+            const actionButtons = document.getElementById('actionButtons');
+
+            // 初始化事件监听
+            searchBtn.addEventListener('click', handleSearch);
+            followUpBtn.addEventListener('click', handleFollowUp);
+            
+            foodSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSearch();
+            });
+            
+            followUpInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleFollowUp();
+            });
+
+            // 快速搜索
+            window.quickSearch = function(query) {
+                foodSearchInput.value = query;
+                handleSearch();
+            };
+
+            // API连接测试
+            window.testAPIConnection = async function() {
+                chatWelcome.style.display = 'none';
+                                    addChatMessage('Testing API connection...', 'user');
+                    showTypingIndicator();
+                    
+                    try {
+                        const result = await testAPI();
+                        removeTypingIndicator();
+                        addChatMessage('✅ API connection successful! Test passed', 'ai');
+                        console.log('API测试成功:', result);
+                    } catch (error) {
+                        removeTypingIndicator();
+                        addChatMessage(`❌ API test failed: ${error.message}`, 'ai');
+                        console.error('API测试详细错误:', error);
+                    }
+            };
+
+            // 处理搜索
+            async function handleSearch() {
+                const query = foodSearchInput.value.trim();
+                if (!query) return;
+
+                // 隐藏欢迎信息
+                chatWelcome.style.display = 'none';
+                
+                // 添加用户消息
+                addChatMessage(query, 'user');
+                
+                // 显示AI思考中
+                showTypingIndicator();
+                
+                // 清空输入框
+                foodSearchInput.value = '';
+                
+                try {
+                    // 调用AI
+                    const response = await callAI(query, 'search');
+                    
+                    // 移除思考指示器
+                    removeTypingIndicator();
+                    
+                    // 添加AI回复
+                    addChatMessage(response.message, 'ai');
+                    
+                    // 如果有具体菜谱，显示详情
+                    if (response.recipe) {
+                        showRecipeDetail(response.recipe);
+                    }
+                    
+                    // 显示追问区域
+                    followUpSection.classList.remove('hidden');
+                    
+                } catch (error) {
+                    removeTypingIndicator();
+                    console.error('搜索API调用失败:', error);
+                    
+                    // 显示详细错误信息
+                    let errorMessage = 'Sorry, the request failed:';
+                    if (error.message.includes('401')) {
+                        errorMessage = '❌ Invalid API key, please check your API Key';
+                    } else if (error.message.includes('403')) {
+                        errorMessage = '❌ API access denied, please check permissions';
+                    } else if (error.message.includes('404')) {
+                        errorMessage = '❌ API endpoint not found, please check URL';
+                    } else if (error.message.includes('429')) {
+                        errorMessage = '❌ API rate limit exceeded, please try again later';
+                    } else if (error.message.includes('500')) {
+                        errorMessage = '❌ Server internal error, please try again later';
+                    } else {
+                        errorMessage = `❌ Network error: ${error.message}`;
+                    }
+                    
+                    addChatMessage(errorMessage, 'ai');
+                }
+            }
+
+            // 处理追问
+            async function handleFollowUp() {
+                const question = followUpInput.value.trim();
+                if (!question) return;
+
+                // 添加用户追问
+                addChatMessage(question, 'user');
+                
+                // 显示思考中
+                showTypingIndicator();
+                
+                // 清空输入框
+                followUpInput.value = '';
+
+                try {
+                    // 调用AI（带上对话历史）
+                    const response = await callAI(question, 'followup');
+                    
+                    removeTypingIndicator();
+                    addChatMessage(response.message, 'ai');
+                    
+                    // 如果是新菜谱，更新显示
+                    if (response.recipe) {
+                        showRecipeDetail(response.recipe);
+                    }
+                    
+                } catch (error) {
+                    removeTypingIndicator();
+                    console.error('追问API调用失败:', error);
+                    
+                    // 显示详细错误信息
+                    let errorMessage = 'Sorry, the request failed:';
+                    if (error.message.includes('401')) {
+                        errorMessage = '❌ Invalid API key, please check your API Key';
+                    } else if (error.message.includes('403')) {
+                        errorMessage = '❌ API access denied, please check permissions';
+                    } else if (error.message.includes('404')) {
+                        errorMessage = '❌ API endpoint not found, please check URL';
+                    } else if (error.message.includes('429')) {
+                        errorMessage = '❌ API rate limit exceeded, please try again later';
+                    } else if (error.message.includes('500')) {
+                        errorMessage = '❌ Server internal error, please try again later';
+                    } else {
+                        errorMessage = `❌ Network error: ${error.message}`;
+                    }
+                    
+                    addChatMessage(errorMessage, 'ai');
+                }
+            }
+
+            // 调用AI接口
+            async function callAI(userInput, type) {
+                let prompt = '';
+                
+                if (type === 'search') {
+                    prompt = `User said: "${userInput}"
+
+As a professional culinary consultant, please recommend a dish. Reply strictly in the following JSON format in English:
+
+{
+    "type": "recipe",
+    "message": "I recommend a delicious XXX for you!",
+    "recipe": {
+        "name": "Dish Name",
+        "description": "Brief description of this dish's characteristics",
+        "time": "15 minutes",
+        "difficulty": "Easy",
+        "cuisine": "Home Cooking",
+        "ingredients": [
+            {"name": "Ingredient Name", "amount": "Amount"}
+        ],
+        "instructions": ["Step 1", "Step 2", "Step 3"],
+        "tips": "Cooking tips"
+    }
+}
+
+Return only JSON, no other content.`;
+                } else {
+                    // 追问模式，带上对话历史
+                    const history = conversationHistory.slice(-4).map(h => `${h.role}: ${h.content}`).join('\n');
+                    prompt = `Conversation history:
+${history}
+
+User follow-up: "${userInput}"
+
+Please continue answering based on the previous conversation. If recommending a new recipe, use the same JSON format. Keep answers concise.`;
+                }
+
+                const response = await fetch(`${API_CONFIG.baseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: API_CONFIG.model,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: 1500,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API调用失败: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let content = data.choices[0].message.content.trim();
+                
+                // 清理可能的markdown包装和多余内容
+                content = content.replace(/```json\s*|\s*```/g, '').trim();
+                
+                try {
+                    // 尝试解析JSON
+                    const parsed = JSON.parse(content);
+                    
+                    // 保存对话历史
+                    conversationHistory.push({role: 'user', content: userInput});
+                    conversationHistory.push({role: 'ai', content: parsed.message || 'Recommended a dish'});
+                    
+                    return parsed;
+                } catch (e) {
+                    // 如果不是标准JSON，尝试从文本中提取菜谱信息
+                    console.log('JSON解析失败，尝试智能解析:', content);
+                    
+                    // 智能解析：从文本中提取结构化信息
+                    const smartParsed = parseRecipeFromText(content);
+                    if (smartParsed) {
+                        conversationHistory.push({role: 'user', content: userInput});
+                        conversationHistory.push({role: 'ai', content: smartParsed.message});
+                        return smartParsed;
+                    }
+                    
+                    // 如果解析失败，作为普通回复处理
+                    return {
+                        type: 'message',
+                        message: content.length > 200 ? content.substring(0, 200) + '...' : content
+                    };
+                }
+            }
+
+            // 智能解析菜谱文本
+            function parseRecipeFromText(text) {
+                try {
+                    // 查找可能的菜名
+                    let dishName = '美味佳肴';
+                    const dishMatch = text.match(/["']?dish["']?\s*:\s*["']([^"']+)["']?/i) || 
+                                     text.match(/菜名[:：]\s*([^\n,，]+)/i) ||
+                                     text.match(/推荐[:：]\s*([^\n,，]+)/i);
+                    if (dishMatch) dishName = dishMatch[1].trim();
+                    
+                    // 查找烹饪时间
+                    let cookTime = '30分钟';
+                    const timeMatch = text.match(/["']?cooking_time["']?\s*:\s*["']([^"']+)["']?/i) ||
+                                     text.match(/时间[:：]\s*([^\n,，]+)/i) ||
+                                     text.match(/(\d+分钟)/i);
+                    if (timeMatch) cookTime = timeMatch[1].trim();
+                    
+                    // 提取食材（简化版）
+                    const ingredients = [];
+                    const ingredientMatches = text.match(/ingredients[\s\S]*?(\[[\s\S]*?\])/i);
+                    if (ingredientMatches) {
+                        try {
+                            const ingredientArray = JSON.parse(ingredientMatches[1]);
+                            ingredientArray.forEach(item => {
+                                if (typeof item === 'object' && item.name) {
+                                    ingredients.push({
+                                        name: item.name,
+                                        amount: item.amount || '适量'
+                                    });
+                                }
+                            });
+                        } catch (e) {
+                            // 解析失败，添加默认食材
+                            ingredients.push({name: '主要食材', amount: '适量'});
+                        }
+                    }
+                    
+                    // 提取步骤（简化版）
+                    const instructions = [];
+                    const stepsMatch = text.match(/steps[\s\S]*?(\[[\s\S]*?\])/i);
+                    if (stepsMatch) {
+                        try {
+                            const stepsArray = JSON.parse(stepsMatch[1]);
+                            stepsArray.forEach(item => {
+                                if (typeof item === 'object' && item.description) {
+                                    instructions.push(item.description);
+                                }
+                            });
+                        } catch (e) {
+                            instructions.push('按照传统方法制作');
+                        }
+                    }
+                    
+                    // 如果成功提取到信息，返回结构化数据
+                    if (dishName !== '美味佳肴' || ingredients.length > 0) {
+                        return {
+                            type: 'recipe',
+                            message: `I recommend: ${dishName}`,
+                            recipe: {
+                                name: dishName,
+                                description: `A delicious ${dishName}`,
+                                time: cookTime,
+                                difficulty: 'Medium',
+                                cuisine: 'Home Cooking',
+                                ingredients: ingredients.length > 0 ? ingredients : [
+                                    {name: 'Main Ingredients', amount: 'As needed'}
+                                ],
+                                instructions: instructions.length > 0 ? instructions : [
+                                    'Prepare the required ingredients',
+                                    'Cook using traditional methods',
+                                    'Season and plate as desired'
+                                ],
+                                tips: 'Pay attention to heat control and keep ingredients fresh'
+                            }
+                        };
+                    }
+                } catch (e) {
+                    console.log('智能解析失败:', e);
+                }
+                return null;
+            }
+
+            // 添加聊天消息
+            function addChatMessage(message, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-bubble ${sender}-bubble fade-in`;
+                messageDiv.textContent = message;
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // 显示思考指示器
+            function showTypingIndicator() {
+                const typing = document.createElement('div');
+                typing.className = 'typing-indicator';
+                typing.id = 'typingIndicator';
+                typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+                chatContainer.appendChild(typing);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // 移除思考指示器
+            function removeTypingIndicator() {
+                const typing = document.getElementById('typingIndicator');
+                if (typing) typing.remove();
+            }
+
+            // 显示菜谱详情
+            function showRecipeDetail(recipe) {
+                document.getElementById('recipeName').textContent = recipe.name;
+                document.getElementById('recipeDescription').textContent = recipe.description;
+                document.getElementById('recipeTime').textContent = recipe.time;
+                document.getElementById('recipeDifficulty').textContent = recipe.difficulty;
+                document.getElementById('recipeCuisine').textContent = recipe.cuisine || 'Home Cooking';
+
+                // 食材列表
+                const ingredientsList = document.getElementById('ingredientsList');
+                ingredientsList.innerHTML = '';
+                recipe.ingredients.forEach(ingredient => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center p-2 bg-gray-50 rounded';
+                    li.innerHTML = `
+                        <span>${ingredient.name}</span>
+                        <span class="text-gray-500">${ingredient.amount}</span>
+                    `;
+                    ingredientsList.appendChild(li);
+                });
+
+                // 烹饪步骤
+                const instructionsList = document.getElementById('instructionsList');
+                instructionsList.innerHTML = '';
+                recipe.instructions.forEach((step, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start gap-3 p-3 bg-gray-50 rounded';
+                    li.innerHTML = `
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0">${index + 1}</span>
+                        <span>${step}</span>
+                    `;
+                    instructionsList.appendChild(li);
+                });
+
+                // 小贴士
+                document.getElementById('cookingTips').textContent = recipe.tips;
+
+                // 显示菜谱区域和按钮
+                recipeDetailSection.classList.remove('hidden');
+                actionButtons.classList.remove('hidden');
+            }
+
+            // 重新搜索
+            document.getElementById('newSearchBtn').addEventListener('click', () => {
+                // 重置所有状态
+                conversationHistory = [];
+                chatContainer.innerHTML = '';
+                chatWelcome.style.display = 'block';
+                followUpSection.classList.add('hidden');
+                recipeDetailSection.classList.add('hidden');
+                actionButtons.classList.add('hidden');
+                foodSearchInput.focus();
+            });
+
+            // 换个菜谱
+            document.getElementById('anotherRecipeBtn').addEventListener('click', () => {
+                followUpInput.value = 'Can you recommend another similar dish?';
+                handleFollowUp();
+            });
+
+            // 收藏功能（简单的本地存储）
+            document.getElementById('favoriteBtn').addEventListener('click', function() {
+                const recipeName = document.getElementById('recipeName').textContent;
+                let favorites = JSON.parse(localStorage.getItem('favoriteRecipes') || '[]');
+                
+                if (!favorites.includes(recipeName)) {
+                    favorites.push(recipeName);
+                    localStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
+                    this.textContent = '💖 Favorited';
+                    this.classList.add('text-red-500');
+                    
+                    // 显示提示
+                    showToast('Added to favorites!');
+                }
+            });
+
+            // 显示提示消息
+            function showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        });
+    </script>
+</body>
+</html>
+ 
+ 
